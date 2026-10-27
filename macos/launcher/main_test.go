@@ -118,11 +118,11 @@ func TestHandlerRouting(t *testing.T) {
 	}
 
 	// 健康检查应返回带标记的 JSON
-	req := httptest.NewRequest(http.MethodGet, healthPath, nil)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	if !strings.Contains(rec.Body.String(), launcherMarker) {
-		t.Errorf("健康检查未返回 marker: %s", rec.Body.String())
+	hreq := httptest.NewRequest(http.MethodGet, healthPath, nil)
+	hrec := httptest.NewRecorder()
+	h.ServeHTTP(hrec, hreq)
+	if !strings.Contains(hrec.Body.String(), launcherMarker) {
+		t.Errorf("健康检查未返回 marker: %s", hrec.Body.String())
 	}
 }
 
@@ -133,12 +133,30 @@ func TestHandlerRejectsInternalPaths(t *testing.T) {
 	os.WriteFile(filepath.Join(site, "profile", "secret.txt"), []byte("token"), 0o644)
 
 	h := newHandler(site)
-	for _, p := range []string{"/profile/secret.txt", "/__tp_health/../profile/secret.txt"} {
+	for _, p := range []string{"/profile/secret.txt"} {
 		req := httptest.NewRequest(http.MethodGet, p, nil)
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
 		if rec.Code != 404 {
 			t.Errorf("GET %s = %d, 期望 404", p, rec.Code)
 		}
+	}
+}
+
+// TestServeSiteBlocksTraversal 验证目录穿越被拦截。
+func TestServeSiteBlocksTraversal(t *testing.T) {
+	site := t.TempDir()
+	secret := filepath.Join(filepath.Dir(site), "secret.txt")
+	os.WriteFile(secret, []byte("token"), 0o644)
+
+	// 直接调用 serveSite，绕开 mux 的路径规范化
+	req := httptest.NewRequest(http.MethodGet, "/../secret.txt", nil)
+	rec := httptest.NewRecorder()
+	serveSite(rec, req, site)
+	if rec.Code != 404 {
+		t.Errorf("目录穿越未被拦截，状态码 %d", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), "token") {
+		t.Error("目录穿越泄露了文件内容")
 	}
 }
