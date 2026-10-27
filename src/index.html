@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="format-detection" content="telephone=no">
+<title>团队协作台</title>
+
+<!-- 图标：SVG 优先（任意尺寸清晰），PNG 兜底老浏览器 -->
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="mask-icon" href="icons/mask-icon.svg" color="#16a34a">
+<meta name="theme-color" content="#16a34a">
+
+<!-- 首屏骨架内联，避免等外链 CSS 时白屏 -->
+<style>
+  :root{
+    --c-primary:#16a34a; --c-primary-d:#15803d;
+    --bg:#f6f7f9; --surface:#fff; --surface-2:#f9fafb;
+    --text:#1f2937; --text-2:#6b7280; --text-3:#9ca3af;
+    --border:#e5e7eb; --border-2:#d1d5db;
+    --danger:#dc2626; --warn:#d97706; --info:#2563eb;
+  }
+  html,body{margin:0;height:100%;font:14px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%}
+  #bootTip{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-3);gap:10px}
+  .bootspin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--c-primary);
+    border-radius:50%;animation:bspin .8s linear infinite}
+  @keyframes bspin{to{transform:rotate(360deg)}}
+  /* 致命错误页（boot.js 注入） */
+  .fatal{max-width:640px;margin:8vh auto;padding:24px;background:var(--surface);
+    border:1px solid #fecaca;border-radius:14px;color:#501313}
+  .fatal h1{margin:0 0 12px;font-size:18px}
+  .fatal pre{background:var(--surface-2);padding:10px;border-radius:8px;font-size:12px;overflow:auto}
+  .fatal__help{margin:14px 0;font-size:13px;color:var(--text-2)}
+  .fatal .btn{margin-top:8px}
+</style>
+</head>
+<body>
+
+<div id="bootTip">
+  <span class="bootspin"></span>
+  <span>正在载入…</span>
+</div>
+
+<div id="root"></div>
+
+<!-- 全局遮罩与提示容器（由 UI kit 使用） -->
+<div id="busyOverlay" class="busy" hidden>
+  <div class="busy__box">
+    <span class="spinner"></span>
+    <span class="busy__text">处理中…</span>
+  </div>
+</div>
+<div id="toastWrap" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<noscript>
+  <div style="max-width:560px;margin:80px auto;padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:12px">
+    <h1 style="font-size:16px;margin:0 0 10px">需要启用 JavaScript</h1>
+    <p style="margin:0;color:#6b7280;font-size:13px">
+      本程序是纯前端应用，所有功能都依赖 JavaScript。
+      请在浏览器设置中启用 JavaScript 后重新打开 index.html。
+    </p>
+  </div>
+</noscript>
+
+<script src="js/boot.js"></script>
+</body>
+</html>

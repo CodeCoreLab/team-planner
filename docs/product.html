@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>团队协作台 — 数据在自己手里的任务与日志工具</title>
+<meta name="description" content="纯前端单机任务计划与工作日志工具。双击 HTML 即用，零依赖、不联网，数据存成文件夹里一个文件，拷走就能换电脑。">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<meta name="theme-color" content="#16a34a">
+
+<style>
+/* ============================================================
+   团队协作台 · 产品介绍页
+   设计基调：清爽工作台。与产品界面同源（墨绿主色、白底、高信息密度），
+   让访客第一眼就建立「这是同一个东西」的认知，而不是营销页与产品割裂。
+   ============================================================ */
+
+:root{
+  /* 主色与产品界面一致，保证视觉连续性 */
+  --accent:#16a34a;
+  --accent-deep:#15803d;
+  --accent-ink:#14532d;
+  --accent-soft:#f0fdf4;
+  --accent-line:#bbf7d0;
+
+  /* 中性色偏绿，避免纯灰的冷淡感 */
+  --canvas:#f7f9f8;
+  --surface:#ffffff;
+  --sunken:#f1f5f3;
+  --ink:#111827;
+  --ink-2:#4b5563;
+  --ink-3:#6b7280;
+  --ink-4:#9ca3af;
+  --hair:rgba(17,24,39,.08);
+  --hair-2:rgba(17,24,39,.14);
+
+  --amber:#b45309;
+  --amber-soft:#fffbeb;
+  --red:#b91c1c;
+
+  /* 4pt 基准的空间刻度 */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
+  --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:128px;
+
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px; --r-full:999px;
+  --maxw:1080px;
+
+  /* 指数缓动：进入用 expo-out，状态切换用 quart-in-out */
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-quart:cubic-bezier(.25,1,.5,1);
+  --ease-io:cubic-bezier(.65,0,.35,1);
+
+  --shadow-1:0 1px 2px rgba(17,24,39,.05);
+  --shadow-2:0 4px 16px rgba(17,24,39,.07);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html{-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  /* 单一字体多字重：系统字体加载零延迟、中文渲染最稳 */
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans SC",Roboto,sans-serif;
+  font-size:16px;
+  line-height:1.65;
+  color:var(--ink);
+  background:var(--canvas);
+  -webkit-font-smoothing:antialiased;
+}
+
+h1,h2,h3,h4{margin:0;font-weight:600;line-height:1.25;letter-spacing:-.015em}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+ul{margin:0;padding:0;list-style:none}
+
+.wrap{width:min(100% - var(--s5) * 2, var(--maxw));margin-inline:auto}
+
+/* 键盘可达：聚焦环不能被去掉 */
+a:focus-visible,button:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+  border-radius:var(--s1);
+}
+
+.sr{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+
+/* ============================================================
+   顶栏
+   ============================================================ */
+
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(247,249,248,.82);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid transparent;
+  transition:border-color .3s var(--ease-io),box-shadow .3s var(--ease-io);
+}
+.topbar.stuck{
+  border-bottom-color:var(--hair);
+  box-shadow:0 1px 12px rgba(17,24,39,.05);
+}
+.topbar .wrap{
+  display:flex;align-items:center;gap:var(--s4);
+  height:60px;padding-inline:var(--s2);
+}
+
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em}
+.brand img{width:28px;height:28px;border-radius:var(--r-sm);display:block}
+.brand span{font-size:15.5px}
+
+.nav-links{
+  margin-left:auto;display:flex;align-items:center;gap:var(--s1);
+  font-size:14px;color:var(--ink-3);
+  padding-right:var(--s2);
+}
+.nav-links a{
+  padding:6px 10px;border-radius:var(--r-sm);
+  transition:color .18s var(--ease-io),background .18s var(--ease-io);
+}
+.nav-links a:hover{color:var(--accent-ink);background:var(--accent-soft)}
+
+.cta-mini{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent);color:#fff;
+  padding:7px 14px;border-radius:var(--r-full);
+  font-size:13.5px;font-weight:600;
+  box-shadow:0 1px 2px rgba(22,163,74,.25);
+  transition:transform .18s var(--ease-out),background .18s var(--ease-io),box-shadow .18s var(--ease-io);
+}
+.cta-mini:hover{
+  background:var(--accent-deep);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(22,163,74,.28);
+}
+.cta-mini svg{width:14px;height:14px}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+
+.hero{position:relative;overflow:hidden;padding-block:var(--s9) var(--s8)}
+.hero::before{
+  /* 一层极淡的网格，暗示「结构化的工作台」，不是装饰性渐变 */
+  content:"";position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(to right,rgba(17,24,39,.035) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(17,24,39,.035) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 70% 60% at 50% 0%,#000 20%,transparent 75%);
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 0%,#000 20%,transparent 75%);
+}
+.hero .wrap{position:relative;z-index:1}
+
+.hero-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:var(--s8);align-items:center;
+}
+
+.badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--surface);
+  border:1px solid var(--hair-2);
+  border-radius:var(--r-full);
+  padding:5px 12px 5px 10px;
+  font-size:12.5px;color:var(--ink-2);font-weight:500;
+  box-shadow:var(--shadow-1);
+}
+.badge .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 0 3px rgba(22,163,74,.15);
+}
+
+h1{
+  font-size:clamp(2rem,4.4vw,3.15rem);
+  font-weight:700;letter-spacing:-.03em;line-height:1.14;
+  margin-top:var(--s5);
+}
+h1 .hl{
+  color:var(--accent-deep);
+  /* 用底线强调而非高亮块，克制且不打断阅读节奏。
+   * 关键：行高会被小字号压扁导致底线被裁，所以
+   *   1) 用 padding-bottom 给底线留出空间
+   *   2) box-decoration-break 保证换行时每行都完整
+   *   3) 负 margin 抵消 padding，不破坏整体节奏 */
+  background-image:linear-gradient(var(--accent-line),var(--accent-line));
+  background-repeat:no-repeat;
+  background-size:100% .34em;
+  background-position:0 100%;
+  padding-bottom:.06em;
+  -webkit-box-decoration-break:clone;
+  box-decoration-break:clone;
+}
+
+.lede{
+  margin-top:var(--s5);
+  font-size:clamp(1rem,1.35vw,1.125rem);
+  line-height:1.78;
+  color:var(--ink-2);
+  max-width:34em;
+}
+
+.hero-actions{
+  display:flex;flex-wrap:wrap;gap:var(--s3);
+  margin-top:var(--s6);
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 20px;border-radius:var(--r-md);
+  font-size:14.5px;font-weight:600;
+  border:1px solid transparent;
+  transition:transform .18s var(--ease-out),background .18s var(--ease-io),
+             box-shadow .18s var(--ease-io),border-color .18s var(--ease-io);
+}
+.btn svg{width:15px;height:15px}
+.btn-primary{
+  background:var(--accent);color:#fff;
+  box-shadow:0 2px 8px rgba(22,163,74,.24);
+}
+.btn-primary:hover{
+  background:var(--accent-deep);transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(22,163,74,.3);
+}
+.btn-ghost{
+  background:var(--surface);color:var(--ink);
+  border-color:var(--hair-2);
+  box-shadow:var(--shadow-1);
+}
+.btn-ghost:hover{
+  border-color:var(--ink-4);transform:translateY(-2px);
+  box-shadow:var(--shadow-2);
+}
+
+.hero-note{
+  margin-top:var(--s4);
+  font-size:12.5px;color:var(--ink-4);
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.hero-note code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11.5px;
+  background:var(--sunken);
+  padding:2px 6px;border-radius:5px;
+  color:var(--ink-2);
+}
+
+/* ---- Hero 右侧：功能示意窗 ---- */
+.stage{position:relative}
+.mock{
+  background:var(--surface);
+  border:1px solid var(--hair-2);
+  border-radius:var(--r-lg);
+  box-shadow:0 12px 40px rgba(17,24,39,.1),0 2px 8px rgba(17,24,39,.04);
+  overflow:hidden;
+  transform:perspective(1400px) rotateY(-2.5deg) rotateX(1.2deg);
+  transition:transform .6s var(--ease-quart);
+}
+.mock:hover{transform:perspective(1400px) rotateY(0) rotateX(0)}
+
+.mock-bar{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 12px;border-bottom:1px solid var(--hair);
+  background:var(--sunken);
+}
+.mock-bar i{width:8px;height:8px;border-radius:50%;background:var(--hair-2);display:block}
+.mock-bar span{
+  margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10.5px;color:var(--ink-4);
+}
+
+.mock-body{padding:var(--s4)}
+
+.mock-hero{
+  background:linear-gradient(120deg,var(--accent),#0ea5e9);
+  border-radius:var(--r-md);
+  padding:12px 14px;color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.mock-hero b{font-size:13px;font-weight:650;display:block}
+.mock-hero small{font-size:10.5px;opacity:.9;display:block;margin-top:1px}
+.mock-hero .nums{display:flex;gap:14px;text-align:right}
+.mock-hero .nums em{font-style:normal;display:block;font-size:16px;font-weight:700;line-height:1}
+.mock-hero .nums i{font-style:normal;font-size:9.5px;opacity:.85}
+
+.mock-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:7px;margin-top:7px;
+}
+.mock-stat{
+  border:1px solid var(--hair);border-radius:var(--r-sm);
+  padding:8px 9px;
+}
+.mock-stat b{display:block;font-size:15px;font-weight:700;line-height:1.1}
+.mock-stat i{font-style:normal;font-size:9.5px;color:var(--ink-4);display:block;margin-top:1px}
+
+.mock-list{margin-top:9px;display:flex;flex-direction:column;gap:1px}
+.mock-row{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 2px;font-size:11.5px;
+  border-bottom:1px solid var(--hair);
+}
+.mock-row:last-child{border-bottom:0}
+.mock-chk{
+  width:13px;height:13px;flex:0 0 13px;
+  border:1.5px solid var(--hair-2);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;color:transparent;
+}
+.mock-chk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mock-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock-row.done .t{color:var(--ink-4);text-decoration:line-through}
+.mock-pill{
+  font-size:9.5px;padding:1px 6px;border-radius:var(--r-full);
+  background:var(--sunken);color:var(--ink-3);white-space:nowrap;
+}
+.mock-pill.hi{background:#fef2f2;color:var(--red)}
+.mock-pill.ing{background:#eff6ff;color:#1d4ed8}
+.mock-pill.done-p{background:var(--accent-soft);color:var(--accent-deep)}
+
+/* ============================================================
+   Band（章节容器）
+   ============================================================ */
+
+.band{padding-block:var(--s9)}
+.band.sunken{background:var(--surface);border-block:1px solid var(--hair)}
+
+.kicker{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:650;letter-spacing:.02em;
+  color:var(--accent-deep);
+  margin-bottom:var(--s3);
+}
+.kicker::before{
+  content:"";width:14px;height:2px;background:var(--accent);border-radius:1px;
+}
+
+h2{
+  font-size:clamp(1.5rem,2.8vw,2.05rem);
+  font-weight:700;letter-spacing:-.025em;
+  max-width:24em;
+}
+.section-lede{
+  margin-top:var(--s3);
+  color:var(--ink-2);font-size:15.5px;line-height:1.75;
+  max-width:38em;
+}
+
+/* ============================================================
+   概述：三列要点
+   ============================================================ */
+
+.pillars{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:var(--s5);margin-top:var(--s7);
+}
+.pillar{
+  padding:var(--s5);
+  border:1px solid var(--hair);
+  border-radius:var(--r-lg);
+  background:var(--canvas);
+  transition:border-color .25s var(--ease-io),transform .25s var(--ease-out),box-shadow .25s var(--ease-io);
+}
+.pillar:hover{
+  border-color:var(--accent-line);
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-2);
+}
+.pillar-num{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11.5px;color:var(--accent-deep);font-weight:600;
+  letter-spacing:.06em;
+}
+.pillar h3{font-size:16.5px;margin-top:var(--s2)}
+.pillar p{margin-top:var(--s2);font-size:14px;color:var(--ink-2);line-height:1.7}
+
+/* ============================================================
+   核心功能
+   ============================================================ */
+
+.features{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4);margin-top:var(--s7)}
+.feat{
+  display:flex;gap:var(--s4);
+  padding:var(--s5);
+  background:var(--canvas);
+  border:1px solid var(--hair);
+  border-radius:var(--r-lg);
+  transition:border-color .25s var(--ease-io),box-shadow .25s var(--ease-io),transform .25s var(--ease-out);
+}
+.feat:hover{
+  border-color:var(--accent-line);
+  box-shadow:var(--shadow-2);
+  transform:translateY(-2px);
+}
+.feat-ico{
+  flex:0 0 40px;width:40px;height:40px;
+  border-radius:var(--r-md);
+  background:var(--accent-soft);
+  border:1px solid var(--accent-line);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent-deep);
+  transition:background .25s var(--ease-io),transform .25s var(--ease-out);
+}
+.feat:hover .feat-ico{background:var(--accent);border-color:var(--accent);color:#fff;transform:scale(1.06)}
+.feat-ico svg{width:20px;height:20px}
+.feat-body{min-width:0}
+.feat h3{font-size:15.5px}
+.feat p{margin-top:6px;font-size:13.5px;color:var(--ink-2);line-height:1.72}
+
+/* 中英文混排时 baseline 不齐：给行内 code 微调 */
+.feat p code,.step-body p code{white-space:nowrap}
+.feat-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.feat-tags span{
+  font-size:11px;padding:2px 8px;border-radius:var(--r-full);
+  background:var(--surface);border:1px solid var(--hair);
+  color:var(--ink-3);
+}
+
+/* ============================================================
+   适用场景
+   ============================================================ */
+
+.scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4);margin-top:var(--s7)}
+.scene{
+  padding:var(--s5);
+  border-radius:var(--r-lg);
+  border:1px solid var(--hair);
+  background:var(--canvas);
+  transition:border-color .25s var(--ease-io),transform .25s var(--ease-out);
+}
+.scene:hover{border-color:var(--accent-line);transform:translateY(-2px)}
+.scene-who{
+  font-size:12px;font-weight:650;color:var(--accent-deep);
+  letter-spacing:.02em;margin-bottom:var(--s3);
+}
+.scene h3{font-size:15px}
+.scene p{margin-top:var(--s2);font-size:13.5px;color:var(--ink-2);line-height:1.72}
+.scene ul{margin-top:var(--s3);display:flex;flex-direction:column;gap:5px}
+.scene li{
+  font-size:13px;color:var(--ink-2);
+  padding-left:16px;position:relative;
+}
+.scene li::before{
+  content:"";position:absolute;left:0;top:.6em;
+  width:5px;height:5px;border-radius:50%;
+  background:var(--accent-line);
+}
+
+/* ============================================================
+   数据流向图
+   ============================================================ */
+
+.flow{
+  margin-top:var(--s7);
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:var(--s4);
+  align-items:stretch;
+}
+.flow-node{
+  border:1px solid var(--hair);
+  border-radius:var(--r-lg);
+  padding:var(--s5);
+  background:var(--canvas);
+  position:relative;
+  transition:border-color .25s var(--ease-io);
+}
+.flow-node:hover{border-color:var(--accent-line)}
+.flow-node .n{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10.5px;color:var(--ink-4);letter-spacing:.08em;
+}
+.flow-node h3{font-size:14.5px;margin-top:6px}
+.flow-node p{font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.65}
+.flow-node code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11.5px;background:var(--surface);
+  border:1px solid var(--hair);padding:1px 5px;border-radius:4px;
+  color:var(--accent-ink);
+}
+
+/* ============================================================
+   规格表
+   ============================================================ */
+
+.specs{
+  margin-top:var(--s7);
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:0 var(--s7);
+  border-top:1px solid var(--hair);
+}
+.spec{
+  display:flex;align-items:baseline;justify-content:space-between;gap:var(--s4);
+  padding:11px 0;border-bottom:1px solid var(--hair);
+}
+.spec dt{font-size:13.5px;color:var(--ink-3)}
+.spec dd{
+  margin:0;font-size:13.5px;font-weight:600;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  text-align:right;
+}
+.spec dd code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;font-weight:500;
+}
+
+/* ============================================================
+   安装步骤
+   ============================================================ */
+
+.steps{margin-top:var(--s7);display:flex;flex-direction:column;gap:0}
+.step{
+  display:grid;grid-template-columns:auto 1fr;
+  gap:var(--s5);
+  padding-bottom:var(--s5);
+  position:relative;
+}
+.step:last-child{padding-bottom:0}
+.step-n{
+  width:30px;height:30px;flex:0 0 30px;
+  border-radius:50%;
+  background:var(--surface);
+  border:1.5px solid var(--accent-line);
+  color:var(--accent-deep);
+  font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:1;
+  transition:background .25s var(--ease-io),color .25s var(--ease-io),border-color .25s var(--ease-io);
+}
+.step:hover .step-n{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step:not(:last-child)::before{
+  content:"";position:absolute;left:14.5px;top:30px;bottom:0;
+  width:1px;background:var(--hair-2);
+}
+.step-body h3{font-size:15px}
+.step-body p{font-size:13.5px;color:var(--ink-2);margin-top:5px;line-height:1.7}
+.step-body code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;background:var(--sunken);
+  padding:1px 6px;border-radius:4px;color:var(--accent-ink);
+}
+
+.callout{
+  margin-top:var(--s6);
+  display:flex;gap:var(--s3);
+  padding:var(--s4) var(--s5);
+  background:var(--amber-soft);
+  border:1px solid #fde68a;
+  border-radius:var(--r-md);
+  font-size:13.5px;color:var(--amber);line-height:1.7;
+}
+.callout svg{width:16px;height:16px;flex:0 0 16px;margin-top:2px}
+
+/* ============================================================
+   下载区
+   ============================================================ */
+
+.dl{
+  margin-top:var(--s7);
+  background:var(--surface);
+  border:1px solid var(--hair-2);
+  border-radius:var(--r-xl);
+  padding:var(--s7) var(--s6);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s6);flex-wrap:wrap;
+  box-shadow:var(--shadow-1);
+}
+.dl-l h3{font-size:17px}
+.dl-l p{font-size:13.5px;color:var(--ink-2);margin-top:5px}
+.dl-r{display:flex;gap:var(--s3);flex-wrap:wrap}
+
+/* ============================================================
+   页脚
+   ============================================================ */
+
+.foot{
+  padding-block:var(--s6);
+  border-top:1px solid var(--hair);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s4);flex-wrap:wrap;
+  font-size:12.5px;color:var(--ink-4);
+}
+.foot a{transition:color .18s var(--ease-io)}
+.foot a:hover{color:var(--accent-deep)}
+
+/* ============================================================
+   入场动效：渐进增强
+   默认状态就是可见的 —— 万一 JS 挂了或 IO 不触发，
+   内容依然在，绝不出现「整页 opacity:0」的经典事故。
+   ============================================================ */
+
+html.js .reveal{
+  opacity:0;
+  transform:translateY(14px);
+  transition:opacity .7s var(--ease-out),transform .7s var(--ease-out);
+  transition-delay:calc(var(--i,0) * 70ms);
+  will-change:opacity,transform;
+}
+html.js .reveal.in{
+  opacity:1;
+  transform:none;
+  will-change:auto;
+}
+
+@media (prefers-reduced-motion:reduce){
+  html.js .reveal{opacity:1 !important;transform:none !important;transition:none !important}
+  *{transition-duration:.01ms !important;animation-duration:.01ms !important}
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr;gap:var(--s7)}
+  .hero{padding-block:var(--s8) var(--s7)}
+  .stage{order:-1}          /* 手机端先看到界面，再读文案 */
+  .mock{transform:none}
+  .pillars{grid-template-columns:1fr 1fr;gap:var(--s4)}
+  .features{grid-template-columns:1fr}
+  .scenes{grid-template-columns:1fr 1fr}
+  .flow{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr;gap:0}
+}
+
+@media (max-width:720px){
+  .nav-links{display:none}
+  .topbar .wrap{height:56px}
+  .band{padding-block:var(--s8)}
+  .hero{padding-block:var(--s7) var(--s6)}
+  .pillars{grid-template-columns:1fr}
+  .scenes{grid-template-columns:1fr}
+  .dl{padding:var(--s5);flex-direction:column;align-items:stretch}
+  .dl-r{flex-direction:column}
+  .dl-r .btn{justify-content:center}
+  .foot{flex-direction:column;align-items:flex-start;gap:var(--s2)}
+}
+
+@media (max-width:400px){
+  body{font-size:15px}
+  .wrap{width:calc(100% - var(--s4) * 2)}
+  .hero-actions .btn{width:100%;justify-content:center}
+  .mock-stats{grid-template-columns:repeat(2,1fr)}
+}
+
+/* 打印：去掉动效与装饰，只留内容 */
+@media print{
+  .topbar,.hero::before,.hero-actions,.dl-r{display:none}
+  html.js .reveal{opacity:1 !important;transform:none !important}
+  body{background:#fff}
+  .band{padding-block:var(--s5);break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<a class="sr" href="#main">跳到主要内容</a>
+
+<!-- ============================ 顶栏 ============================ -->
+<header class="topbar" id="topbar">
+  <div class="wrap">
+    <a class="brand" href="#">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>团队协作台</span>
+    </a>
+    <nav class="nav-links" aria-label="页面导航">
+      <a href="#overview">概述</a>
+      <a href="#features">功能</a>
+      <a href="#scenes">场景</a>
+      <a href="#specs">规格</a>
+      <a href="#install">上手</a>
+      <a href="#download" class="cta-mini">
+        立即使用
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============================ Hero ============================ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="badge">
+          <i class="dot" aria-hidden="true"></i>
+          纯前端 · 零依赖 · 数据在本机
+        </span>
+
+        <h1>任务与日志<br>存在<span class="hl">你自己的文件夹</span>里</h1>
+
+        <p class="lede">
+          双击一个 HTML 文件就能用。不装软件、不起服务、不联网。
+          所有数据存成文件夹里的一个文件 —— 换电脑时把整个文件夹拷过去，打开就是原来那样。
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            下载使用
+          </a>
+          <a class="btn btn-ghost" href="#features">
+            看看能做什么
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+
+        <p class="hero-note">
+          解压后 <code>512 KB</code> · 启动 <code>0.3 秒</code> · 不需要管理员权限
+        </p>
+      </div>
+
+      <!-- 界面示意：不是截图，是重新绘制的轻量 mock，
+           保证任何分辨率下都清晰，也避免大图拖慢首屏 -->
+      <div class="stage reveal" style="--i:1">
+        <div class="mock" aria-hidden="true">
+          <div class="mock-bar">
+            <i></i><i></i><i></i>
+            <span>127.0.0.1 · 本地</span>
+          </div>
+          <div class="mock-body">
+            <div class="mock-hero">
+              <div>
+                <b>上午好，马欣</b>
+                <small>10月23日 星期五 · 第 43 周</small>
+              </div>
+              <div class="nums">
+                <div><em>1/4</em><i>今日完成</i></div>
+                <div><em>1/4</em><i>本周完成</i></div>
+              </div>
+            </div>
+
+            <div class="mock-stats">
+              <div class="mock-stat"><b>4</b><i>今日任务</i></div>
+              <div class="mock-stat"><b>1</b><i>今日完成</i></div>
+              <div class="mock-stat"><b>0</b><i>已逾期</i></div>
+              <div class="mock-stat"><b>3天</b><i>连续写日志</i></div>
+            </div>
+
+            <div class="mock-list">
+              <div class="mock-row">
+                <span class="mock-chk"></span>
+                <span class="t">巡检报告图标统一性审查</span>
+                <span class="mock-pill hi">高</span>
+                <span class="mock-pill ing">进行中</span>
+              </div>
+              <div class="mock-row">
+                <span class="mock-chk"></span>
+                <span class="t">采集链路自建方案评估</span>
+                <span class="mock-pill hi">紧急</span>
+                <span class="mock-pill">待开始</span>
+              </div>
+              <div class="mock-row">
+                <span class="mock-chk"></span>
+                <span class="t">纳管剩余 11 台主机</span>
+                <span class="mock-pill">中</span>
+                <span class="mock-pill">待开始</span>
+              </div>
+              <div class="mock-row done">
+                <span class="mock-chk on">✓</span>
+                <span class="t">清理告警去噪规则</span>
+                <span class="mock-pill done-p">已完成</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 概述 ============================ -->
+<section class="band sunken" id="overview">
+  <div class="wrap">
+    <span class="kicker">产品概述</span>
+    <h2>一个文件就是一套系统</h2>
+    <p class="section-lede">
+      大多数待办工具把数据放在云端或某个后台服务里，于是就有了注册、登录、断网、迁移、服务到期这些问题。
+      团队协作台反过来做：整个程序是几个静态文件，数据是你文件夹里的一个 <code>data.js</code>。
+    </p>
+
+    <div class="pillars">
+      <div class="pillar reveal" style="--i:0">
+        <span class="pillar-num">01 / 消除依赖</span>
+        <h3>不需要装任何东西</h3>
+        <p>
+          没有运行时、没有服务进程、不需要管理员权限。用系统自带的浏览器打开即可，
+          连浏览器内核都复用已有的 Edge，不下载额外组件。
+        </p>
+      </div>
+      <div class="pillar reveal" style="--i:1">
+        <span class="pillar-num">02 / 消除服务</span>
+        <h3>没有服务器就不会宕机</h3>
+        <p>
+          断网、公司网络策略调整、服务下线，都不会影响你使用。
+          数据读写在本地完成，一次操作通常 2–3 毫秒。
+        </p>
+      </div>
+      <div class="pillar reveal" style="--i:2">
+        <span class="pillar-num">03 / 消除锁定</span>
+        <h3>数据永远是你能打开的文件</h3>
+        <p>
+          备份就是复制文件，迁移就是拷文件夹。不依赖任何厂商的导出功能，
+          也不存在「服务停了数据打不开」的可能。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 核心功能 ============================ -->
+<section class="band" id="features">
+  <div class="wrap">
+    <span class="kicker">核心功能</span>
+    <h2>任务、日志、报表，在同一处</h2>
+    <p class="section-lede">
+      覆盖 11 个页面、15 张数据表、150 个数据操作函数的完整能力，全部在浏览器里跑完。
+    </p>
+
+    <div class="features">
+      <article class="feat reveal" style="--i:0">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>任务计划</h3>
+          <p>日 / 周 / 月 / 季 / 年 五种视图自由切换，按状态、优先级、负责人、标签、关键词筛选。</p>
+          <div class="feat-tags">
+            <span>五种视图</span><span>多条件筛选</span><span>拖拽排序</span><span>批量完成</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:1">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>循环任务</h3>
+          <p>设成每天 / 每周 / 每月，自动生成后续实例。改模板内容会同步到未完成的实例，规则变了则重建。</p>
+          <div class="feat-tags">
+            <span>每日/周/月</span><span>模板与实例分离</span><span>月末自动夹取</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:2">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>工作日志</h3>
+          <p>日报 / 周报 / 月报，一键把当期任务汇总成文字。同一天重复写会覆盖而不是产生两篇。</p>
+          <div class="feat-tags">
+            <span>一键汇总</span><span>提交日历</span><span>连续天数</span><span>可点评</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:3">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>看板与提醒</h3>
+          <p>四列看板拖动卡片即改状态。逾期、今天、即将到期三段式提醒，标签栏标题直接显示逾期数量。工作日未写日报会在侧栏提示，可随时关闭。</p>
+          <div class="feat-tags">
+            <span>拖拽改状态</span><span>三段提醒</span><span>标题角标</span><span>日报提醒可关闭</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:4">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>统计报表</h3>
+          <p>完成率、准时率、日报打卡率，近 8 周趋势，以及按部门、按成员两个维度的横向对比。</p>
+          <div class="feat-tags">
+            <span>完成率</span><span>准时率</span><span>打卡率</span><span>8 周趋势</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:5">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>组织与权限</h3>
+          <p>多级部门树、成员启停、8 模块 × 6 动作的权限矩阵。数据范围可设仅自己 / 本部门 / 全部。</p>
+          <div class="feat-tags">
+            <span>部门树</span><span>权限矩阵</span><span>数据范围</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:6">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>全局搜索</h3>
+          <p>一个输入框同时搜任务、计划、日志、成员，分类展示、点击直达。快捷键 <code>Ctrl K</code>。</p>
+          <div class="feat-tags">
+            <span>四类并行</span><span>分类结果</span><span>快捷键</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:7">
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 3v13m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="feat-body">
+          <h3>数据可带走</h3>
+          <p>连接一次文件夹，之后改动自动写回 <code>data.js</code>。备份是复制文件，迁移是拷文件夹。</p>
+          <div class="feat-tags">
+            <span>自动写回</span><span>原子写入</span><span>覆盖前备份</span><span>CSV 导出</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 适用场景 ============================ -->
+<section class="band sunken" id="scenes">
+  <div class="wrap">
+    <span class="kicker">适用场景</span>
+    <h2>它适合什么样的工作方式</h2>
+    <p class="section-lede">
+      它不试图替代团队协作平台。它解决的是另一类问题：<strong>你的工作记录不值得放在别人服务器上，也不想为此维护一套服务。</strong>
+    </p>
+
+    <div class="scenes">
+      <article class="scene reveal" style="--i:0">
+        <div class="scene-who">个人</div>
+        <h3>个人的每日节奏</h3>
+        <p>一个人一张任务表，早上排计划、晚上写日报，周末翻一遍看这周做成了什么。</p>
+        <ul>
+          <li>不想为了记待办而注册账号</li>
+          <li>需要跨机器带走自己的记录</li>
+          <li>在意产出而非工具本身</li>
+        </ul>
+      </article>
+
+      <article class="scene reveal" style="--i:1">
+        <div class="scene-who">小团队</div>
+        <h3>受管控网络里的协作</h3>
+        <p>公司网络限制外网访问、禁止安装软件时，静态页面反而是最容易落地的一种形态。</p>
+        <ul>
+          <li>不能装客户端软件</li>
+          <li>不能连外部 SaaS</li>
+          <li>需要看得见摸得着的文件交付</li>
+        </ul>
+      </article>
+
+      <article class="scene reveal" style="--i:2">
+        <div class="scene-who">运维 / 值班</div>
+        <h3>值班台账与交接</h3>
+        <p>值班期间发生了什么、处理到哪一步、谁接手 —— 需要一份能直接给出、也能被追溯的记录。</p>
+        <ul>
+          <li>交接要完整，不能漏项</li>
+          <li>事后要能翻查某天做了什么</li>
+          <li>换人时记录要能转交</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="callout reveal" style="--i:3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.5 0L3.16 16.25A2 2 0 005 19z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <strong>它不适合需要多人实时协同的场景。</strong>
+        纯前端没有服务端，数据在各自的文件夹里，做不到多人共享同一份数据。
+        如果团队需要中心化协作，应该用带后端的方案。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 数据怎么存 ============================ -->
+<section class="band">
+  <div class="wrap">
+    <span class="kicker">数据怎么存</span>
+    <h2>同一份数据，两个副本</h2>
+    <p class="section-lede">
+      浏览器里的副本负责读写速度，文件夹里的文件负责可携带。两者自动同步，
+      任一侧丢失都能从另一侧恢复。
+    </p>
+
+    <div class="flow">
+      <div class="flow-node reveal" style="--i:0">
+        <span class="n">LAYER 01</span>
+        <h3>浏览器本地库</h3>
+        <p>
+          读写在这里完成，单次查询约 <code>1–2 ms</code>；带标签与子任务装饰的完整列表加载约 <code>20 ms</code>。
+          即使没连接文件夹，改动也实时保存在这里。
+        </p>
+      </div>
+      <div class="flow-node reveal" style="--i:1">
+        <span class="n">LAYER 02</span>
+        <h3>data.js 快照</h3>
+        <p>
+          连接文件夹后自动写回。写入采用「先备份旧文件 → 再写新文件」，
+          中途断电不会留下半个文件。
+        </p>
+      </div>
+      <div class="flow-node reveal" style="--i:2">
+        <span class="n">LAYER 03</span>
+        <h3>你的备份</h3>
+        <p>
+          随时可点「备份」导出。把它放进另一台机器的程序目录，
+          打开页面就会自动载入，不需要任何导入操作。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 规格 ============================ -->
+<section class="band sunken" id="specs">
+  <div class="wrap">
+    <span class="kicker">技术规格</span>
+    <h2>把数字摆出来</h2>
+
+    <dl class="specs">
+      <div class="spec reveal" style="--i:0"><dt>解压后体积</dt><dd>512 KB</dd></div>
+      <div class="spec reveal" style="--i:0"><dt>压缩包体积</dt><dd>177 KB</dd></div>
+      <div class="spec reveal" style="--i:1"><dt>文件数量</dt><dd>37 个</dd></div>
+      <div class="spec reveal" style="--i:1"><dt>运行时依赖</dt><dd>零</dd></div>
+      <div class="spec reveal" style="--i:2"><dt>启动时间</dt><dd>约 0.3 秒</dd></div>
+      <div class="spec reveal" style="--i:2"><dt>需要联网</dt><dd>否</dd></div>
+      <div class="spec reveal" style="--i:3"><dt>数据表</dt><dd>15 张</dd></div>
+      <div class="spec reveal" style="--i:3"><dt>页面</dt><dd>11 个</dd></div>
+      <div class="spec reveal" style="--i:4"><dt>查询响应</dt><dd>&lt; 5 ms</dd></div>
+      <div class="spec reveal" style="--i:4"><dt>自动化测试</dt><dd>215 项</dd></div>
+      <div class="spec reveal" style="--i:5"><dt>最低浏览器</dt><dd>Edge / Chrome 80+</dd></div>
+      <div class="spec reveal" style="--i:5"><dt>管理员权限</dt><dd>不需要</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ============================ 上手 ============================ -->
+<section class="band" id="install">
+  <div class="wrap">
+    <span class="kicker">开始使用</span>
+    <h2>四步，然后忘掉它</h2>
+
+    <div class="steps">
+      <div class="step reveal" style="--i:0">
+        <span class="step-n">1</span>
+        <div class="step-body">
+          <h3>解压到一个固定位置</h3>
+          <p>建议放桌面或文档目录，不要放临时目录 —— 那是数据要长期待的地方。</p>
+        </div>
+      </div>
+
+      <div class="step reveal" style="--i:1">
+        <span class="step-n">2</span>
+        <div class="step-body">
+          <h3>双击 <code>index.html</code></h3>
+          <p>用系统自带的 Edge 或 Chrome 打开。会看到首次使用向导，设一个管理员密码即可。</p>
+        </div>
+      </div>
+
+      <div class="step reveal" style="--i:2">
+        <span class="step-n">3</span>
+        <div class="step-body">
+          <h3>点左下角「连接目录」</h3>
+          <p>选中刚才解压的那个文件夹并允许访问。之后每次改动都会自动写回 <code>data.js</code>。</p>
+        </div>
+      </div>
+
+      <div class="step reveal" style="--i:3">
+        <span class="step-n">4</span>
+        <div class="step-body">
+          <h3>开始排今天的任务</h3>
+          <p>工作台右上角「新建任务」，或按 <code>n</code>。晚上去「工作日志」写今天做了什么。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout reveal" style="--i:4">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.5 0L3.16 16.25A2 2 0 005 19z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        第 3 步的授权很重要。不连接文件夹也能用，但数据只存在浏览器里，
+        <strong>清理浏览器数据后就会丢</strong>。连一次，换电脑才只需要拷文件夹。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 下载 ============================ -->
+<section class="band sunken" id="download">
+  <div class="wrap">
+    <div class="dl reveal">
+      <div class="dl-l">
+        <h3>团队协作台</h3>
+        <p>177 KB 压缩包 · 解压即用 · 无需安装 · 数据在你自己的文件夹里</p>
+      </div>
+      <div class="dl-r">
+        <a class="btn btn-primary" href="assets/team-planner.zip" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          下载压缩包
+        </a>
+        <a class="btn btn-ghost" href="app/index.html" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          在线试用
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================ 页脚 ============================ -->
+<footer class="band sunken" style="padding-block:var(--s6)">
+  <div class="wrap">
+    <div class="foot">
+      <span>团队协作台 · 数据保存在本机，不联网、不上传</span>
+      <span>
+        <a href="https://example-site.com/">← 返回工具列表</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+ * 渐进增强的入场动效
+ *
+ * 关键：先给 html 加 .js 类，CSS 里只有 .js 存在时才允许隐藏。
+ * 这样 JS 挂掉、IntersectionObserver 不支持、被打印时，
+ * 内容始终可见 —— 不会出现「整页停在 opacity:0」的经典事故。
+ * ============================================================ */
+
+(function () {
+  var doc = document.documentElement;
+
+  // 顶栏加阴影
+  var topbar = document.getElementById('topbar');
+  var onScroll = function () {
+    topbar.classList.toggle('stuck', window.scrollY > 8);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // 尊重减少动效偏好：直接显示，不接管
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+
+  var items = document.querySelectorAll('.reveal');
+  if (!items.length) return;
+
+  // 不支持 IO：不隐藏，直接可见
+  if (!('IntersectionObserver' in window)) return;
+
+  doc.classList.add('js');
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+  Array.prototype.forEach.call(items, function (el) { io.observe(el); });
+
+  // 兜底：2 秒后仍未进入视口的（如锚点跳转后）也强制显示，
+  // 避免用户滚到底部时内容还藏着
+  setTimeout(function () {
+    Array.prototype.forEach.call(items, function (el) {
+      if (!el.classList.contains('in')) {
+        var r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight * 1.2) el.classList.add('in');
+      }
+    });
+  }, 2000);
+})();
+</script>
+
+</body>
+</html>
