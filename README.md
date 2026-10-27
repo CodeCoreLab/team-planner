@@ -19,7 +19,7 @@
 ## 快速开始
 
 ```bash
-# 方式一：直接打开
+# 方式一：直接打开（Windows）
 #   双击 src/index.html
 
 # 方式二：起个本地静态服务器（推荐，避免个别浏览器对 file:// 的限制）
@@ -27,6 +27,12 @@ cd team-planner/src
 python -m http.server 8080
 # 浏览器打开 http://localhost:8080
 ```
+
+**macOS**：直接双击 html 会被默认浏览器接管，而 Safari 不支持
+File System Access API（`showDirectoryPicker`），「连接目录」不可用；
+`file://` 下 fetch 被 CORS 拦、ES Module 被拦。
+所以 macOS 版用 `macos/` 下的原生壳（起本地 HTTP 服务 + Chromium 内核
+`--app` 模式开窗），打包脚本为 `macos/脚本-打包-macOS.py`，需在 macOS 上执行。
 
 **首次运行**会要求设置管理员密码。密码只保存在你自己电脑上（浏览器本地存储），
 不上传、不同步。
@@ -52,6 +58,10 @@ python -m http.server 8080
 
 标「管理组」的页面需要对应权限才会在导航中出现。
 
+> 「管理组」是便于理解的**功能分组**，不是代码里的权限单元。
+> 实际权限模块是下列 8 项，「计划管理」与「用户中心」不单独设权限模块
+> ——前者复用 `plans`，后者对所有登录用户开放。
+
 ### 权限模型
 
 角色可配置，权限由两个维度组合而成：
@@ -62,11 +72,21 @@ python -m http.server 8080
 dashboard  plans  logs  board  reports  org  settings  oplogs
 ```
 
-**动作**：`view`（查看）/ `edit`（编辑）
+**动作**（6 种，按模块组合授权）：
 
-**数据范围**：`own`（仅自己的）/ `all`（全部）
+| 动作 | 含义 | 适用模块 |
+|---|---|---|
+| `view` | 查看 | 全部 |
+| `add` | 新增 | `plans` `logs` `org` |
+| `edit` | 编辑 | 全部 |
+| `delete` | 删除 | `plans` `logs` `org` |
+| `review` | 点评 | `logs` |
+| `co_assign` | 指派他人 | `plans` |
 
-内置管理员角色拥有全部权限；其他角色可在「组织架构」页按模块逐一授权。
+**数据范围**（`data_scope`）：`self`（仅自己的）/ `dept`（本部门）/ `all`（全部）
+
+内置三个角色：系统管理员（全权限 + `all`）、部门主管（无设置与操作日志 + `dept`）、
+普通成员（仅本人数据 + `self`）。其他角色可在「组织架构」页按模块逐一授权。
 
 ### 数据导出与备份
 
@@ -92,8 +112,14 @@ dashboard  plans  logs  board  reports  org  settings  oplogs
 | `page_size` | `20` | 列表每页条数 |
 | `log_reminder` | `1` | 是否显示日志填写红点提醒 |
 | `hide_weekend` | `0` | 日报视图隐藏周末 |
+| `hide_saturday` | `0` | 单独隐藏周六 |
+| `hide_sunday` | `0` | 单独隐藏周日 |
 | `hide_evening` | `0` | 日报视图隐藏晚间时段 |
+| `notify_enabled` | `0` | 是否启用到期提醒 |
+| `email_enabled` | `0` | 邮件提醒开关。**纯前端无服务进程，邮件提醒不可用**；保留键位以便迁移兼容 |
 | `work_periods` | 上午/下午/晚上三段 | 工作时段划分，用于工时归类 |
+
+> 完整默认值以 `src/js/core/schema.js` 的 `DEFAULT_SETTINGS` 为准。
 
 配置文件 `src/data.js` 是**首次运行时的占位文件**。连接数据目录并保存后，
 程序会把它覆盖成真实数据；也可以用「备份」导出的文件替换它。
@@ -118,8 +144,8 @@ A：不能。这是纯前端应用，没有服务端。请用导出 / 导入在�
 A：同一浏览器内多标签页可以，但跨设备不行。多人协作场景请用带服务端的方案。
 
 **Q：怎么加一个新的功能页？**
-A：见 `docs/architecture.md` 与 `src/js/ui/shell.js` 的 `ROUTES` 表。
-新增路由需要在 `ROUTES` 里注册，并在 `src/js/pages/` 下实现同名模块。
+A：在 `src/js/ui/shell.js` 的 `ROUTES` 表里注册路由，
+并在 `src/js/pages/` 下实现同名模块。
 
 ---
 
@@ -150,9 +176,9 @@ team-planner/
 │       │   ├── kit.js      组件库（toast / modal / 字段 / 表格等）
 │       │   └── shell.js    外壳：路由表、导航、全局搜索
 │       └── pages/          10 个功能页
-├── tests/                  node:test 用例
-├── docs/
-└── tools/                  辅助脚本
+├── tests/run-tests.mjs   node:test 用例
+├── docs/                 产品页、截图与发布记录
+└── macos/                macOS 打包脚本
 ```
 
 ---
