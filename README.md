@@ -1,5 +1,7 @@
 # team-planner — 团队协作台
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-8a2be2.svg)](LICENSE)[![Releases](https://img.shields.io/badge/Releases-latest-blue.svg)](https://github.com/CodeCoreLab/team-planner/releases)[![Platform: Browser](https://img.shields.io/badge/platform-browser-42A5F5.svg)]
+
 纯前端的团队任务 / 日志 / 工时协作台。**零依赖、零构建**——
 解压后双击 `src/index.html` 就能用，不需要安装任何东西，不需要联网。
 
@@ -23,7 +25,7 @@
 #   双击 src/index.html
 
 # 方式二：起个本地静态服务器（推荐，避免个别浏览器对 file:// 的限制）
-cd team-planner/src
+cd src
 python -m http.server 8080
 # 浏览器打开 http://localhost:8080
 ```
@@ -188,7 +190,6 @@ team-planner/
 ### 跑测试
 
 ```bash
-cd team-planner
 node --test tests/run-tests.mjs
 ```
 
@@ -214,6 +215,6 @@ window.Validate = {
 
 ## 许可
 
-MIT © 2026 Ma Xin。见 [`../LICENSE`](../LICENSE)。
+MIT © 2026 Ma Xin。见 [`LICENSE`](LICENSE)。
 
 零第三方依赖，无第三方许可需要追溯。
