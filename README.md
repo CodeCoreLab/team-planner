@@ -163,7 +163,7 @@ team-planner/
 
 ```bash
 cd team-planner
-node --test tests/
+node --test tests/run-tests.mjs
 ```
 
 测试用 Node 的 `vm` 沙箱加载浏览器脚本，因此**不需要浏览器、不需要 headless 环境**。
