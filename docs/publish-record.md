@@ -1,14 +1,14 @@
 # 团队协作台 · 部署与发布记录
 
-> 线上地址：**https://example-site.com/team-planner/**
-> 本地根：`E:\xmtool\team-planner\`（遵循 `E:\xmtool\README.md` 规范，目录名 = 线上 slug）
+> 本文记录部署方式与历次发布情况。**服务器地址、目录路径与内网域名已脱敏**，
+> 仅保留方法、踩坑记录与验收口径。
 
 ---
 
 ## 1. 目录结构
 
 ```
-E:\xmtool\team-planner\
+team-planner/
 ├── src\                        纯前端应用本体（可直接双击 index.html 运行）
 │   ├── index.html              应用入口
 │   ├── data.js                 数据文件（首次为占位，连接目录后被覆盖）
@@ -39,7 +39,7 @@ E:\xmtool\team-planner\
 ## 2. 线上结构
 
 ```
-/opt/xmtooldev/www/team-planner/
+<站点根>/<slug>/
 ├── index.html                  产品介绍页（47 KB）
 ├── assets\
 │   ├── icon.svg                560 字节
@@ -63,16 +63,15 @@ E:\xmtool\team-planner\
 
 | 项 | 值 |
 |---|---|
-| URL | https://example-site.com/team-planner/ |
-| 目标机 | example-test-host（不是跳板机 example-jump-host） |
-| 目录 | `/opt/xmtooldev/www/team-planner/` |
-| 发布方式 | `xmtooldev-publish` skill（prepare → publish → 卡片 → 验证） |
+| URL | `<站点根>/<slug>/` |
+| 目录 | `<站点根>/<slug>/` |
+| 发布方式 | prepare → publish → 插入入口卡片 → 验证 |
 | 安装包 | `assets/team-planner.zip` · 179,061 字节 · zip 头 `PK` |
-| 属主权限 | `root:root`，目录 755 / 文件 644 |
-| 入口卡片 | 已插入 `/opt/xmtooldev/www/index.html`，`grep -c 'href="/team-planner/"'` = 1 |
-| 入口页备份 | `index.html.bak_cards_20261023_043706`（md5 `a2540777…`，与原件一致） |
+| 属主权限 | 目录 755 / 文件 644 |
+| 入口卡片 | 已插入站点入口页，`grep -c 'href="/<slug>/"'` = 1 |
+| 入口页备份 | `index.html.bak_<时间戳>`（md5 与原件一致） |
 | healthcheck | exit 0，含 `tool:team-planner -> 200` |
-| 解耦红线 | vhost `grep -c aireport` = 0 |
+| 解耦红线 | vhost 与页面内容中不含其他站点的标识 |
 | 回滚点 | 首次发布，无旧快照 |
 
 ### 发布过程中的两次修正
@@ -127,8 +126,6 @@ E:\xmtool\team-planner\
 ---
 
 ## 3.2 v1.0.3（2026-10-23 晚）— 代码审查修复
-
-完整审查报告见 `E://WorkBuddy//2026-10-22-17-32-50//report//14_code_architecture_review.md`
 
 ### 修复 3 个真实缺陷
 
@@ -222,15 +219,13 @@ toggle 被调用次数: 2   ← 一次点击触发两次
 
 ```bash
 # 更新：改完 src/ 或 docs/ 后重新走发布流水
-python ~/.workbuddy/skills/xmtooldev-publish/scripts/prepare_publish_dir.py \
-    team-planner docs/product.html /tmp/pub \
-    docs/assets/team-planner.zip=team-planner.zip docs/assets/icon.svg=icon.svg
-# 再把 src/* 放进 /tmp/pub/app/
-python ~/.workbuddy/skills/xmtooldev-publish/scripts/publish_to_xmtooldev.py team-planner /tmp/pub
+#   1. 准备发布目录：产品页 + 安装包 + 图标
+#   2. 把 src/* 放进发布目录的 app/ 子目录
+#   3. 上传到站点根目录下的 <slug>/
+#   4. 在入口页插入卡片并验证唯一性
 
-# 回滚
-ssh root@example-test-host '/opt/xmtooldev/bin/deploy.sh team-planner --rollback'
-ssh root@example-test-host 'ls /opt/xmtooldev/backup/snapshots/team-planner/'
+# 回滚：恢复发布前备份的入口页，或部署脚本的 --rollback 快照
+deploy.sh <slug> --rollback
 ```
 
 ---
@@ -242,7 +237,7 @@ ssh root@example-test-host 'ls /opt/xmtooldev/backup/snapshots/team-planner/'
 | 维度 | 决策 | 理由 |
 |---|---|---|
 | 调性 | 清爽工作台 | 与产品界面同源（墨绿主色、白底、高密度），访客第一眼建立「同一个东西」的认知，避免营销页与产品割裂 |
-| 字体 | 单一系统字体多字重 | 中文渲染最稳、零加载延迟。不引入展示字体是因为受众是国内内网用户，加载外链字体会失败 |
+| 字体 | 单一系统字体多字重 | 中文渲染最稳、零加载延迟。不引入展示字体是因为加载外链字体会失败（离线环境尤其明显） |
 | 字号 | 5 级模块化（12.5 / 13.5 / 15 / h2 clamp / h1 clamp） | 避免 14/15/16/18 挤在一起的模糊层次 |
 | 间距 | 4pt 基准（4→128 共 10 档） | 8pt 太粗，12px 这种常用值会缺 |
 | 配色 | 墨绿 `#16a34a` 主色 + 偏绿中性灰 | 纯灰偏冷，中性色偏品牌色更整体 |
