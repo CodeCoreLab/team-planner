@@ -32,6 +32,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -249,28 +250,66 @@ func newHandler(siteDir string) http.Handler {
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		clean := filepath.Clean("/" + strings.TrimPrefix(r.URL.Path, "/"))
-		if clean == "/" {
-			clean = "/index.html"
-		}
-		if strings.HasPrefix(clean, "/__") || strings.Contains(clean, "..") {
-			http.NotFound(w, r)
-			return
-		}
-		full := filepath.Join(siteDir, filepath.FromSlash(clean))
-		st, err := os.Stat(full)
-		if err != nil || st.IsDir() {
-			http.NotFound(w, r)
-			return
-		}
-		if ct := mime.TypeByExtension(filepath.Ext(full)); ct != "" {
-			w.Header().Set("Content-Type", ct)
-		}
-		// 禁用缓存，避免升级后仍看到旧静态资源
-		w.Header().Set("Cache-Control", "no-store")
-		http.ServeFile(w, r, full)
+		serveSite(w, r, siteDir)
 	})
 	return mux
+}
+
+// serveSite 提供站点静态文件。
+//
+// 这里刻意**不用 http.ServeFile**：它对以 index.html 结尾的路径会 301 到 "./"，
+// 而我们把 "/" 映射到 index.html，浏览器就会在 "/" 与 "./" 之间反复跳转
+// 形成死循环。改为直接读文件写出。
+func serveSite(w http.ResponseWriter, r *http.Request, siteDir string) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	clean := path.Clean("/" + strings.TrimPrefix(r.URL.Path, "/"))
+	if clean == "/" {
+		clean = "/index.html"
+	}
+	// 内部路径一律不开放
+	if strings.HasPrefix(clean, "/__") {
+		http.NotFound(w, r)
+		return
+	}
+	// profile 是浏览器配置目录（含缓存与令牌），任何情况下都不允许访问
+	if clean == "/profile" || strings.HasPrefix(clean, "/profile/") {
+		http.NotFound(w, r)
+		return
+	}
+
+	full := filepath.Join(siteDir, filepath.FromSlash(clean))
+	// 二次确认没有跳出 siteDir（防目录穿越）
+	rel, err := filepath.Rel(siteDir, full)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		http.NotFound(w, r)
+		return
+	}
+
+	st, err := os.Stat(full)
+	if err != nil || st.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+
+	data, err := os.ReadFile(full)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if ct := mime.TypeByExtension(filepath.Ext(full)); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	// 禁用缓存，避免升级后仍看到旧静态资源
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	if r.Method == http.MethodHead {
+		return
+	}
+	_, _ = w.Write(data)
 }
 
 func urlFor(port int) string {
