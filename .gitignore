@@ -59,11 +59,15 @@ analyzers/
 *.snk
 
 # --- 运行期数据 / 日志 / 备份（含用户凭据，绝不入库） --------------------
-data/
-logs/
-backup/
-run/
-releases/
+# 注意：下面几条必须用「前导斜杠」锚定到仓库根目录。
+# 否则 gitignore 的模式会匹配任意层级的同名目录 —— `data/` 会连带忽略
+# 源码目录 `src/js/data/`（auth.js / db.js / repo.js 等核心模块），
+# 导致克隆下来的仓库缺文件、程序直接跑不起来（2026-10-28 修复）。
+/data/
+/logs/
+/backup/
+/run/
+/releases/
 *.db
 *.db-shm
 *.db-wal
@@ -71,8 +75,8 @@ releases/
 *.sqlite3
 *.bak
 *.log
-data.js
-data.bak.js
+/data.js
+/data.bak.js
 *.import-failed
 !*/docs/_evidence/**
 !*/docs/**/evidence/**

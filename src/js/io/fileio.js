@@ -191,7 +191,26 @@
    * 快照
    * ------------------------------------------------------------ */
 
-  async function exportSnapshot() {
+  /**
+   * 导出快照
+   *
+   * @param {object} opts
+   * @param {boolean} opts.redactPasswords 是否剥离账号口令哈希
+   *
+   * 关于 redactPasswords：
+   *   对外分发的备份文件（exportBackup）一律剥离口令哈希。
+   *   理由：备份文件会被转发、存网盘、塞进工单附件，一旦被拿到，
+   *         里面的口令哈希可被离线爆破，用户复用的密码会波及其他系统。
+   *         剥离后账号处于「需重设口令」状态，首次登录时设置新口令即可。
+   *
+   *   但**不**对写回本地数据目录的 data.js 剥离：
+   *         那个文件是本机的工作数据，也是「整个文件夹拷到新电脑」这条
+   *         迁移路径的唯一载体，剥离后用户必须重设一遍口令才能登录，
+   *         与「拷过去双击就能用」的产品承诺冲突。
+   *         本地文件的保护靠 PBKDF2 口令派生（10 万轮）而非靠剥离。
+   */
+  async function exportSnapshot(opts) {
+    const o = opts || {};
     const entities = ['tasks', 'plans', 'logs', 'users', 'departments', 'roles',
       'subtasks', 'tags', 'task_assignees', 'work_log_reviews', 'notifications',
       'operation_logs', 'task_order', 'settings'];
@@ -215,6 +234,10 @@
       }
     });
 
+    if (o.redactPasswords) {
+      data.users = redactUserPasswords(data.users);
+    }
+
     return {
       schema: SCHEMA_VERSION,
       app: '团队协作台',
@@ -223,6 +246,25 @@
       counts,
       data,
     };
+  }
+
+  /**
+   * 剥离账号口令哈希（不可逆）
+   *
+   * 做法：把 password 字段替换为固定标记 PWD_RESET_MARK。
+   *   标记值是常量、不含任何口令信息，拿到文件也无法反推口令。
+   *   导入后该账号登录时会走「首次设置新口令」流程。
+   *
+   * 只动 password 字段，账号、角色、姓名、任务归属等业务数据完整保留。
+   */
+  function redactUserPasswords(users) {
+    const list = Array.isArray(users) ? users : [];
+    return list.map((u) => {
+      if (!u || typeof u !== 'object') return u;
+      const out = Object.assign({}, u);
+      if (out.password) out.password = window.Auth.PWD_RESET_MARK;
+      return out;
+    });
   }
 
   /**
@@ -486,7 +528,8 @@
    * 一律回退下载 —— 用户真取消的话多下一次也比"点了没反应"好。
    */
   async function exportBackup(filename) {
-    const snap = await exportSnapshot();
+    // 对外分发的备份一律剥离口令哈希（见 exportSnapshot 注释）
+    const snap = await exportSnapshot({ redactPasswords: true });
     const text = toScript(snap);
     const name = filename || ('data-' + window.Validate.today() + '.js');
 

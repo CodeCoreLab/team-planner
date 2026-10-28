@@ -278,6 +278,27 @@
             return;
           }
 
+          // 脱敏备份导入的账号：口令在导出时被剥离，需要先设置新口令。
+          // 这条路径**不校验旧口令** —— 旧口令根本不存在于文件里。
+          // 安全性由「谁拿到了这个备份文件」决定，与直接拿到文件本身同级别。
+          if (window.Auth.isPasswordReset(user.password)) {
+            const newHash = await this.setFirstPassword(user);
+            if (!newHash) {
+              errBox.textContent = '尚未设置新口令，无法登录';
+              return;
+            }
+            user.password = newHash;
+            window.Auth.throttleClear(username);
+            const role2 = await window.Repo.get('roles', user.role_id);
+            window.Auth.setUser(user, role2);
+            this.user = user;
+            await window.OpLog.write('首次设置口令并登录', username);
+            toast('口令已设置，欢迎回来，' + (user.real_name || user.username), 'ok');
+            const dirState2 = await window.FileIO.init().catch(() => ({ state: 'none' }));
+            await this.enterMain(dirState2);
+            return;
+          }
+
           let ok = false;
           try {
             ok = await window.Auth.verifyPassword(password, user.password);
@@ -319,6 +340,39 @@
     async findUserByUsername(username) {
       const rows = await window.Repo.byIndex('users', 'by_username', username);
       return (rows || []).find(u => !u.deleted) || null;
+    },
+
+    /**
+     * 首次设置口令（脱敏备份导入的账号）
+     *
+     * 场景：备份文件在导出时剥离了口令哈希，导入后账号处于「需重设口令」状态。
+     * 这里弹两个输入框收新口令，写回 users 表，然后放行登录。
+     *
+     * @returns {string|null} 新口令哈希；null 表示用户取消或输入无效
+     */
+    async setFirstPassword(user) {
+      const pwd1 = await window.UI.prompt(
+        '这个账号的口令在备份导出时已被移除（防止备份文件泄露口令）。请设置一个新口令（至少 6 位）。',
+        { title: '设置新口令', type: 'password', placeholder: '至少 6 位' }
+      );
+      if (pwd1 === null) return null;
+      const pwd2 = await window.UI.prompt('请再输入一次以确认。', {
+        title: '确认新口令', type: 'password', placeholder: '再输一次',
+      });
+      if (pwd2 === null) return null;
+      if (pwd1 !== pwd2) {
+        window.UI.toast('两次输入的口令不一致', 'err');
+        return null;
+      }
+      try {
+        window.Validate.password(pwd1, 'password');
+      } catch (err) {
+        window.UI.toast(window.Errors.normalize(err).message, 'err');
+        return null;
+      }
+      const hash = await window.Auth.hashPassword(pwd1);
+      await window.Repo.save('users', Object.assign({}, user, { password: hash }));
+      return hash;
     },
 
     /* ---------------- 主界面 ---------------- */
