@@ -139,7 +139,7 @@
     const payload = {
       schema: snapshot.schema || SCHEMA_VERSION,
       app: '团队协作台',
-      version: snapshot.version || '1.0.0',
+      version: snapshot.version || (window.APP_VERSION || 'unknown'),
       exported_at: snapshot.exported_at || new Date().toISOString(),
       counts: snapshot.counts || {},
       data: snapshot.data || {},
@@ -241,7 +241,7 @@
     return {
       schema: SCHEMA_VERSION,
       app: '团队协作台',
-      version: (window.APP_VERSION || '1.0.0'),
+      version: (window.APP_VERSION || 'unknown'),
       exported_at: new Date().toISOString(),
       counts,
       data,

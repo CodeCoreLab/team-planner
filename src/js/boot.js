@@ -12,7 +12,11 @@
  *   - 顺序在代码里一目了然，不依赖 HTML 里标签的先后
  * ============================================================ */
 
-const APP_VERSION = '1.0.0';
+// APP_VERSION 是本程序的版本权威源（唯一真相源）。
+// 任何地方都不得再出现第二份版本号字面量 —— 需要版本号时一律从这里取。
+// 其它模块是经典 script（非 ES Module），无法 import 常量，
+// 只能从 window 上取 window.APP_VERSION。
+const APP_VERSION = '1.0.3';
 // 暴露到 window：导出快照时要用版本号打标，而其它模块是经典 script（非 ES Module），
 // 无法 import 常量，只能从 window 上取。
 window.APP_VERSION = APP_VERSION;

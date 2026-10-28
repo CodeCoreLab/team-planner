@@ -203,7 +203,7 @@
   function renderAbout(quota) {
     return sectionCard('关于', h()`
       <div class="about">
-        <p><strong>团队协作台</strong> <span class="muted">v${e()(window.APP_VERSION || '1.0.0')}</span></p>
+        <p><strong>团队协作台</strong> <span class="muted">v${e()(window.APP_VERSION || 'unknown')}</span></p>
         <p class="muted">纯前端单机版：数据保存在本机，不联网、不上传。双击 index.html 即可使用。</p>
         <p class="muted">存储：IndexedDB（工作副本，${quota.usedMB} MB）+ data.js（持久快照）</p>
         <div class="row" style="gap:8px;margin-top:10px">
