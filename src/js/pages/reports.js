@@ -51,7 +51,7 @@
           <div class="tabs">
             ${[['day', '日'], ['week', '周'], ['month', '月'], ['quarter', '季'], ['year', '年']]
               .map(([v, l]) => h()`
-                <button class="tab ${state.period === v ? 'tab--on' : ''}" data-period="${v}" type="button">${l}</button>`).join('')}
+                <button class="tab ${state.period === v ? 'tab--on' : ''}" data-period="${v}" type="button">${l}</button>`)}
           </div>
           <span class="muted">${rg.start} ~ ${rg.end}</span>
         </div>
@@ -224,7 +224,7 @@
           <tbody>
             ${list.map(d => h()`
               <tr>
-                <td>${e()(d.name)}</td>
+                <td>${(d.name)}</td>
                 <td>${d.total}</td>
                 <td>${d.done}</td>
                 <td class="${d.overdue ? 'tbl__warn' : ''}">${d.overdue}</td>
@@ -232,7 +232,7 @@
                   <div class="tbl__bar"><div class="tbl__fill" style="width:${d.rate}%"></div></div>
                   <span>${d.rate}%</span>
                 </td>
-              </tr>`).join('')}
+              </tr>`)}
           </tbody>
         </table>
       </section>`;
@@ -279,7 +279,7 @@
           <tbody>
             ${list.map(d => h()`
               <tr>
-                <td>${e()(d.name)}</td>
+                <td>${(d.name)}</td>
                 <td>${d.total}</td>
                 <td>${d.done}</td>
                 <td class="${d.overdue ? 'tbl__warn' : ''}">${d.overdue}</td>
@@ -287,7 +287,7 @@
                   <div class="tbl__bar"><div class="tbl__fill" style="width:${d.rate}%"></div></div>
                   <span>${d.rate}%</span>
                 </td>
-              </tr>`).join('')}
+              </tr>`)}
           </tbody>
         </table>
       </section>`;

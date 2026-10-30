@@ -118,7 +118,7 @@
     return h()`
       <section class="hero">
         <div class="hero__l">
-          <h2>${greeting()}，${e()(me.real_name || me.username)}</h2>
+          <h2>${greeting()}，${(me.real_name || me.username)}</h2>
           <p>${window.Validate.date(today)} 星期${'日一二三四五六'[window.Validate.dayOfWeek(today)]}
              · 第 ${window.Validate.weekNumber(today)} 周
              · ${wk.start.slice(5)} ~ ${wk.end.slice(5)}</p>
@@ -169,10 +169,10 @@
       <div class="row ${t.status === 'completed' ? 'row--done' : ''}" data-task="${t.id}">
         <button class="chk ${t.status === 'completed' ? 'chk--on' : ''}"
                 data-toggle="${t.id}" type="button" title="切换完成">${t.status === 'completed' ? '✓' : ''}</button>
-        <span class="row__slot">${e()(t.time_slot || '')}</span>
+        <span class="row__slot">${(t.time_slot || '')}</span>
         <span class="row__t">${e()(t.title)}</span>
         ${t.subtask_total ? h()`<span class="row__sub">${t.subtask_done}/${t.subtask_total}</span>` : ''}
-        ${(t.tags || []).slice(0, 2).map(g => h()`<span class="tag">${e()(g)}</span>`).join('')}
+        ${(t.tags || []).slice(0, 2).map(g => h()`<span class="tag">${e()(g)}</span>`)}
         <span class="pill pill--${e()(t.priority)}">${e()(t.priority_name)}</span>
         <span class="pill pill--${e()(t.status)}">${e()(t.status_name)}</span>
         <button class="btn btn--sm btn--ghost" data-edit="${t.id}" type="button">编辑</button>

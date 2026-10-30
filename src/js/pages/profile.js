@@ -99,10 +99,10 @@
               <div class="permrow">
                 <span class="permrow__m">${window.Schema.label('permModules', mod)}</span>
                 <span class="permrow__a">
-                  ${acts.length ? acts.map(a => h()`<em class="permtag">${window.Schema.label('permActions', a)}</em>`).join('') : '—'}
+                  ${acts.length ? acts.map(a => h()`<em class="permtag">${window.Schema.label('permActions', a)}</em>`) : '—'}
                 </span>
               </div>`;
-          }).join('')}
+          })}
         </div>
         <p class="muted">数据范围：${window.Schema.label('dataScope', window.Auth.dataScope())}</p>
       </section>`;

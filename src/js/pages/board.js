@@ -76,7 +76,7 @@
       </section>
 
       <section class="kanban">
-        ${COLUMNS.map(c => renderColumn(c, byCol[c.key])).join('')}
+        ${COLUMNS.map(c => renderColumn(c, byCol[c.key]))}
       </section>
     `;
   }
@@ -97,7 +97,7 @@
           <em>${sorted.length}</em>
         </header>
         <div class="kcol__body" data-drop="${col.key}">
-          ${sorted.length ? sorted.map(t => renderCard(t)).join('') : h()`<div class="kcol__empty">拖到这里</div>`}
+          ${sorted.length ? sorted.map(t => renderCard(t)) : h()`<div class="kcol__empty">拖到这里</div>`}
         </div>
       </div>`;
   }
@@ -114,7 +114,7 @@
         <p class="kcard__t">${e()(t.title)}</p>
         <div class="kcard__f">
           ${t.time_slot ? h()`<span class="tag">${e()(t.time_slot)}</span>` : ''}
-          ${(t.tags || []).slice(0, 2).map(g => h()`<span class="tag">${e()(g)}</span>`).join('')}
+          ${(t.tags || []).slice(0, 2).map(g => h()`<span class="tag">${e()(g)}</span>`)}
           ${t.subtask_total ? h()`<span class="tag">${t.subtask_done}/${t.subtask_total}</span>` : ''}
           <button class="btn btn--sm btn--ghost" data-kedit="${t.id}" type="button">编辑</button>
         </div>
@@ -145,7 +145,7 @@
                 ${t.assignee_name ? h()`<span class="row__who">${e()(t.assignee_name)}</span>` : ''}
                 <span class="pill pill--${e()(t.status)}">${e()(t.status_name)}</span>
                 <button class="btn btn--sm btn--ghost" data-kedit="${t.id}" type="button">编辑</button>
-              </div>`).join('')}
+              </div>`)}
           </div>
         </section>`;
     };
@@ -172,7 +172,7 @@
             <span class="muted">未来</span>
             <select class="input input--sm" id="remindDays">
               ${[3, 7, 14, 30].map(d => h()`
-                <option value="${d}" ${state.days === d ? 'selected' : ''}>${d} 天</option>`).join('')}
+                <option value="${d}" ${state.days === d ? 'selected' : ''}>${d} 天</option>`)}
             </select>
           </div>
         </div>

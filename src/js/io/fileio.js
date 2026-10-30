@@ -135,6 +135,26 @@
    *   而 <script src="data.js"> 不受限，打开页面时自动执行拿到数据。
    * ------------------------------------------------------------ */
 
+  /**
+   * JSON 序列化并阻断 </script> 提前闭合。
+   *
+   * data.js 是通过 <script src="data.js"> 加载的：若任务标题等用户数据里
+   * 含 "</script>"，JSON.stringify 不会转义它，浏览器解析到这个字面量时
+   * 会认为脚本标签已结束 —— 其后的数据变成正文，攻击者可借此注入任意
+   * 标签（经典的 script-context 注入）。
+   *
+   * 处理：把 JSON 文本里的 "<" 统一写成 "\u003c"（合法的 JS/JSON 转义，
+   * JSON.parse 与 JS 字面量都会把它还原成 "<"），序列化结果中就不再出现
+   * "<" 字符，注入通道被关闭。同时处理 U+2028/U+2029（JS 字面量里的
+   * 行终止符，JSON 里合法但旧引擎会报语法错误）。
+   */
+  function jsonSafe(v) {
+    return JSON.stringify(v)
+      .replace(/</g, '\\u003c')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+  }
+
   function toScript(snapshot) {
     const payload = {
       schema: snapshot.schema || SCHEMA_VERSION,
@@ -146,7 +166,7 @@
     };
     return '/* 团队协作台 数据文件 —— 由程序自动生成，建议不要手工修改 */\n'
       + '/* 如需备份，直接复制本文件；如需迁移，把整个文件夹拷到新电脑即可 */\n'
-      + 'window.__DATA = ' + JSON.stringify(payload) + ';\n';
+      + 'window.__DATA = ' + jsonSafe(payload) + ';\n';
   }
 
   /**

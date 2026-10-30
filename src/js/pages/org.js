@@ -85,12 +85,12 @@
           <select class="input input--sm" id="uDept">
             <option value="">全部部门</option>
             ${depts.map(d => h()`
-              <option value="${d.id}" ${String(state.department_id) === String(d.id) ? 'selected' : ''}>${e()(d.name)}</option>`).join('')}
+              <option value="${d.id}" ${String(state.department_id) === String(d.id) ? 'selected' : ''}>${e()(d.name)}</option>`)}
           </select>
           <select class="input input--sm" id="uRole">
             <option value="">全部角色</option>
             ${roles.map(r => h()`
-              <option value="${r.id}" ${String(state.role_id) === String(r.id) ? 'selected' : ''}>${e()(r.name)}</option>`).join('')}
+              <option value="${r.id}" ${String(state.role_id) === String(r.id) ? 'selected' : ''}>${e()(r.name)}</option>`)}
           </select>
           <select class="input input--sm" id="uStatus">
             <option value="">全部状态</option>
@@ -132,7 +132,7 @@
                         <button class="btn btn--sm btn--danger" data-udel="${u.id}" type="button">删除</button>` : ''}
                     </div>
                   </td>
-                </tr>`).join('')}
+                </tr>`)}
             </tbody>
           </table>` : window.UI.empty('没有符合条件的成员')}
       </section>`;
@@ -164,7 +164,7 @@
               <button class="btn btn--sm btn--danger" data-ddel="${node.id}" type="button">删除</button>` : ''}
           </div>
         </div>
-        ${(node.children || []).map(c => renderNode(c, depth + 1)).join('')}`;
+        ${(node.children || []).map(c => renderNode(c, depth + 1))}`;
     };
 
     return h()`
@@ -174,7 +174,7 @@
           ${window.Auth.can('org', 'add') ? h()`
             <button class="btn btn--primary btn--sm" id="newDept" type="button">+ 新增部门</button>` : ''}
         </div>
-        ${d.tree.length ? h()`<div class="depts">${d.tree.map(n => renderNode(n, 0)).join('')}</div>` : window.UI.empty('还没有部门')}
+        ${d.tree.length ? h()`<div class="depts">${d.tree.map(n => renderNode(n, 0))}</div>` : window.UI.empty('还没有部门')}
       </section>`;
   }
 
@@ -216,12 +216,12 @@
                     <div class="permrow">
                       <span class="permrow__m">${window.Schema.label('permModules', mod)}</span>
                       <span class="permrow__a">
-                        ${list.length ? list.map(a => h()`<em class="permtag">${window.Schema.label('permActions', a)}</em>`).join('') : '—'}
+                        ${list.length ? list.map(a => h()`<em class="permtag">${window.Schema.label('permActions', a)}</em>`) : '—'}
                       </span>
                     </div>`;
-                }).join('')}
+                })}
               </div>
-            </div>`).join('')}
+            </div>`)}
         </div>
       </section>`;
   }

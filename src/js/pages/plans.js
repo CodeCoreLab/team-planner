@@ -112,17 +112,17 @@
           </div>
         </div>
         <div class="toolbar">
-          <span class="toolbar__period">${e()(periodText)}</span>
+          <span class="toolbar__period">${(periodText)}</span>
           <input class="input input--sm" id="fSearch" placeholder="搜索标题/描述/标签" value="${e()(state.search)}">
           <select class="input input--sm" id="fStatus">
             <option value="">全部状态</option>
             ${window.Schema.ENUMS.taskStatus.map(s => h()`
-              <option value="${s}" ${state.status === s ? 'selected' : ''}>${window.Schema.label('taskStatus', s)}</option>`).join('')}
+              <option value="${s}" ${state.status === s ? 'selected' : ''}>${window.Schema.label('taskStatus', s)}</option>`)}
           </select>
           <select class="input input--sm" id="fPriority">
             <option value="">全部优先级</option>
             ${window.Schema.ENUMS.priority.map(p => h()`
-              <option value="${p}" ${state.priority === p ? 'selected' : ''}>${window.Schema.label('priority', p)}</option>`).join('')}
+              <option value="${p}" ${state.priority === p ? 'selected' : ''}>${window.Schema.label('priority', p)}</option>`)}
           </select>
           <button class="btn btn--sm btn--ghost" id="fClear" type="button">清除筛选</button>
         </div>
@@ -174,7 +174,7 @@
         return h()`${head}<div class="groupempty">无任务</div>`;
       }
 
-      return h()`${head}${list.map(t => renderTaskRow(t)).join('')}`;
+      return h()`${head}${list.map(t => renderTaskRow(t))}`;
     }).join('');
   }
 
@@ -191,7 +191,7 @@
         ${t.is_instance ? h()`<span class="tag tag--rec" title="循环任务实例">循环</span>` : ''}
         ${t.is_template ? h()`<span class="tag tag--rec" title="循环任务模板（${e()(t.recurrence_name)}）">${e()(t.recurrence_name)}</span>` : ''}
         ${t.subtask_total ? h()`<span class="row__sub">${t.subtask_done}/${t.subtask_total}</span>` : ''}
-        ${(t.tags || []).slice(0, 3).map(g => h()`<span class="tag">${e()(g)}</span>`).join('')}
+        ${(t.tags || []).slice(0, 3).map(g => h()`<span class="tag">${e()(g)}</span>`)}
         ${t.assignee_name ? h()`<span class="row__who">${e()(t.assignee_name)}</span>` : ''}
         <span class="pill pill--${e()(t.priority)}">${e()(t.priority_name)}</span>
         <span class="pill pill--${e()(t.status)}">${e()(t.status_name)}</span>
@@ -215,12 +215,12 @@
             ${tagList.length ? h()`
               <select class="input input--sm" id="fTag">
                 <option value="">全部标签</option>
-                ${tagList.map(x => h()`<option value="${e()(x.tag)}" ${state.tag === x.tag ? 'selected' : ''}>${e()(x.tag)} (${x.count})</option>`).join('')}
+                ${tagList.map(x => h()`<option value="${e()(x.tag)}" ${state.tag === x.tag ? 'selected' : ''}>${e()(x.tag)} (${x.count})</option>`)}
               </select>` : ''}
             ${users.length > 1 ? h()`
               <select class="input input--sm" id="fAssignee">
                 <option value="">全部负责人</option>
-                ${users.map(u => h()`<option value="${u.id}" ${String(state.assignee_id) === String(u.id) ? 'selected' : ''}>${e()(u.name)}</option>`).join('')}
+                ${users.map(u => h()`<option value="${u.id}" ${String(state.assignee_id) === String(u.id) ? 'selected' : ''}>${e()(u.name)}</option>`)}
               </select>` : ''}
           </div>
         </div>

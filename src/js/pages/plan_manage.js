@@ -61,12 +61,12 @@
           <select class="input input--sm" id="pType">
             <option value="">全部类型</option>
             ${window.Schema.ENUMS.planType.map(t => h()`
-              <option value="${t}" ${state.type === t ? 'selected' : ''}>${window.Schema.label('planType', t)}</option>`).join('')}
+              <option value="${t}" ${state.type === t ? 'selected' : ''}>${window.Schema.label('planType', t)}</option>`)}
           </select>
           <select class="input input--sm" id="pStatus">
             <option value="">全部状态</option>
             ${window.Schema.ENUMS.taskStatus.map(s => h()`
-              <option value="${s}" ${state.status === s ? 'selected' : ''}>${window.Schema.label('taskStatus', s)}</option>`).join('')}
+              <option value="${s}" ${state.status === s ? 'selected' : ''}>${window.Schema.label('taskStatus', s)}</option>`)}
           </select>
           <label class="check">
             <input type="checkbox" id="pArchived" ${state.includeArchived ? 'checked' : ''}>
@@ -76,7 +76,7 @@
       </section>
 
       <section class="plan-grid">
-        ${data.items.length ? data.items.map(p => renderCard(p)).join('') : window.UI.empty('还没有计划。计划可以是一个项目、一个目标，用来归拢下面的一组任务。')}
+        ${data.items.length ? data.items.map(p => renderCard(p)) : window.UI.empty('还没有计划。计划可以是一个项目、一个目标，用来归拢下面的一组任务。')}
       </section>
 
       <div id="planPager"></div>

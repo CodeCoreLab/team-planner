@@ -42,11 +42,11 @@
             <option value="">全部动作</option>
             ${actions.map(a => h()`
               <option value="${e()(a.action)}" ${opState.action === a.action ? 'selected' : ''}>
-                ${e()(a.action)} (${a.count})</option>`).join('')}
+                ${e()(a.action)} (${a.count})</option>`)}
           </select>
           <select class="input input--sm" id="opRange">
             ${[['day', '今天'], ['week', '本周'], ['month', '本月'], ['year', '今年']]
-              .map(([v, l]) => h()`<option value="${v}" ${opState.range === v ? 'selected' : ''}>${l}</option>`).join('')}
+              .map(([v, l]) => h()`<option value="${v}" ${opState.range === v ? 'selected' : ''}>${l}</option>`)}
           </select>
         </div>
       </section>
@@ -63,7 +63,7 @@
                   <td><span class="pill pill--medium">${e()(r.action)}</span></td>
                   <td class="tbl__muted">${e()(r.target || '—')}</td>
                   <td class="tbl__detail">${e()(window.Validate.clip(r.detail || '', 120))}</td>
-                </tr>`).join('')}
+                </tr>`)}
             </tbody>
           </table>` : window.UI.empty('这段时间没有操作记录')}
       </section>
@@ -172,7 +172,7 @@
                       <button class="btn btn--sm btn--danger" data-purge="${kind}:${x.id}" type="button">彻底删除</button>
                     </div>
                   </td>
-                </tr>`).join('')}
+                </tr>`)}
             </tbody>
           </table>
         </section>`;

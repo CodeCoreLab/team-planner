@@ -24,37 +24,61 @@
    * ============================================================ */
 
   /**
-   * 安全模板标签
+   * 标记一段「可信 HTML」
    *
-   * 设计决策（重要，改之前请读完）：
+   * 【设计决策（重要，改之前请读完）】
    *
    * 常规做法是"插值一律转义"，但本项目的模板全是多层嵌套的：
    *   render() → renderStats() → card() → 每个都返回 html`` 片段
    * 严格转义会让每处嵌套都要手写 raw()，实测漏一处整块就显示成标签源码，
    * 而且 map().join('') 会丢失标记 —— 这类 bug 极难排查。
    *
-   * 因此这里改用「数据显式转义」策略：
-   *   - 模板插值：默认信任（因为模板本身是代码写的，不是用户输入）
-   *   - 业务数据：必须经 e()（= escape）处理后才允许插值
+   * 因此改用「默认转义 + 显式放行」策略：
+   *   - 模板插值：默认转义（普通字符串一律走 escape()）
+   *   - 需要输出原始 HTML 的，必须显式标记：
+   *       · raw(s) —— 业务代码主动声明"这段可信"
+   *       · html`` 自身的返回值 —— 模板产物天然可信（内部结构由代码写死）
    *
-   * 安全性由"数据入库前清洗 + 输出时 e() 转义"两层保证，
-   * 已在 XSS 测试中验证（见 tests/html/xss_test.js）。
-   * 代价是：任何新代码插入用户数据时必须记得 e()，这点写进了开发约定。
+   * 安全性由「默认转义」保证：
+   *   新代码插入用户数据时**不需要**记得 e() —— 忘了也不会出事；
+   *   而要输出原始 HTML 必须显式调用 raw()，是"看得见"的动作。
+   *
+   * 标记对象带 toString()，这样它既能像字符串一样被拼接/join，
+   * 也能被 mount() / innerHTML 直接消费（不会变成 "[object Object]"）。
+   *
+   * @param {string} s 可信 HTML 文本
+   * @returns {{__html: string, toString: function(): string}}
+   */
+  function markSafe(s) {
+    const htmlText = String(s == null ? '' : s);
+    return {
+      __html: htmlText,
+      toString() { return htmlText; },
+    };
+  }
+
+  /**
+   * 安全模板标签
+   *
+   * 插值默认转义；嵌套的 html`` / raw() 结果原样输出。
+   * 返回值是 markSafe() 标记对象，可直接赋给 innerHTML 或再次插值。
    */
   function html(strings, ...values) {
     let out = '';
     for (let i = 0; i < strings.length; i++) {
       out += strings[i];
       if (i < values.length) {
-        out += renderValue(values[i]);
+        // renderValue 可能返回字符串（已转义）或标记对象（可信 HTML）。
+        // 用 String() 归一：标记对象的 toString() 返回原始 HTML。
+        out += String(renderValue(values[i]));
       }
     }
-    return out;
+    return markSafe(out);
   }
 
   /** 显式标记可信（保留给需要自证的场景） */
   function raw(s) {
-    return String(s == null ? '' : s);
+    return markSafe(s);
   }
 
   /**
@@ -64,16 +88,21 @@
    * 若对节点返回空字符串，字段会整个消失（这个 bug 真实发生过 ——
    * 设置页所有输入框都变空，只剩按钮）。
    * 因此节点统一序列化为 outerHTML。
+   *
+   * 【本次变更】普通字符串**默认转义**（此前是原样返回）。
+   * 信任必须显式：raw() 标记对象、html`` 模板产物、或 DOM 节点。
    */
   function renderValue(v) {
     if (v === null || v === undefined || v === false || v === true) return '';
     const t = typeof v;
-    if (t === 'string') return v;
+    // 默认转义：任何未经标记的字符串都按纯文本处理。
+    if (t === 'string') return escape(v);
     if (t === 'number') return Number.isFinite(v) ? String(v) : '';
     if (Array.isArray(v)) {
       let out = '';
-      for (const x of v) out += renderValue(x);
-      return out;
+      for (const x of v) out += String(renderValue(x));
+      // 数组元素各自处理后整体仍是"已处理过的 HTML"，可安全放行
+      return markSafe(out);
     }
     if (t === 'object') {
       if (v.nodeType === 1 && typeof v.outerHTML === 'string') return v.outerHTML;  // 元素节点
@@ -83,6 +112,7 @@
         for (const c of Array.from(v.childNodes)) out += renderValue(c);
         return out;
       }
+      // 显式放行通道：raw() 与 html`` 的产物都走这里
       if (v.__html !== undefined) return String(v.__html);
       return '';
     }

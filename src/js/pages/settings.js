@@ -84,7 +84,7 @@
               <span class="muted">至</span>
               <input class="input input--sm" data-pe type="time" value="${e()(p.e)}" ${dis}>
               <button class="btn btn--sm btn--ghost" data-pdel type="button" ${dis}>×</button>
-            </div>`).join('')}
+            </div>`)}
         </div>
         <button class="btn btn--sm" id="addPeriod" type="button" ${dis}>+ 添加时段</button>
       </div>
@@ -96,7 +96,7 @@
             <label class="check">
               <input type="checkbox" data-wd="${d.n}" ${d.on ? 'checked' : ''} ${dis}>
               <span>${d.label}</span>
-            </label>`).join('')}
+            </label>`)}
         </div>
       </div>
 

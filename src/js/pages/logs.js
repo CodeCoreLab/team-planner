@@ -62,7 +62,7 @@
       ${renderCalendar(cal)}
       ${renderToolbar(data)}
       <section class="card">
-        ${data.items.length ? data.items.map(l => renderLogItem(l)).join('') : window.UI.empty(emptyText())}
+        ${data.items.length ? data.items.map(l => renderLogItem(l)) : window.UI.empty(emptyText())}
       </section>
       <div id="logPager"></div>
     `;
@@ -122,11 +122,11 @@
       <section class="card card--tight">
         <div class="card__h"><h3>近 5 周提交情况</h3><span class="muted">深色 = 写过</span></div>
         <div class="cal">
-          ${['一', '二', '三', '四', '五', '六', '日'].map(w => h()`<div class="cal__w">${w}</div>`).join('')}
-          ${blanks.map(() => h()`<div class="cal__blank"></div>`).join('')}
+          ${['一', '二', '三', '四', '五', '六', '日'].map(w => h()`<div class="cal__w">${w}</div>`)}
+          ${blanks.map(() => h()`<div class="cal__blank"></div>`)}
           ${days.map(d => h()`
             <div class="cal__d ${d.has ? 'cal__d--on' : ''} ${d.isToday ? 'cal__d--today' : ''}"
-                 title="${d.date}${d.has ? '（已写 ' + d.count + ' 篇）' : '（未写）'}">${Number(d.date.slice(8))}</div>`).join('')}
+                 title="${d.date}${d.has ? '（已写 ' + d.count + ' 篇）' : '（未写）'}">${Number(d.date.slice(8))}</div>`)}
         </div>
       </section>`;
   }
@@ -138,7 +138,7 @@
           <div class="tabs">
             ${window.Schema.ENUMS.logType.map(t => h()`
               <button class="tab ${state.type === t ? 'tab--on' : ''}" data-ltype="${t}" type="button">
-                ${window.Schema.label('logType', t)}</button>`).join('')}
+                ${window.Schema.label('logType', t)}</button>`)}
           </div>
           <div class="row" style="gap:8px">
             <button class="btn btn--sm" id="exportLogs" type="button">导出 CSV</button>
@@ -148,7 +148,7 @@
         <div class="toolbar">
           <select class="input input--sm" id="lRange">
             ${[['day', '今天'], ['week', '本周'], ['month', '本月'], ['quarter', '本季'], ['year', '今年']]
-              .map(([v, l]) => h()`<option value="${v}" ${state.range === v ? 'selected' : ''}>${l}</option>`).join('')}
+              .map(([v, l]) => h()`<option value="${v}" ${state.range === v ? 'selected' : ''}>${l}</option>`)}
           </select>
           <input class="input input--sm" id="lSearch" placeholder="搜索日志内容" value="${e()(state.search)}">
           <label class="check">
@@ -189,7 +189,7 @@
                 <strong>${e()(r.reviewer_name)}</strong>
                 ${r.level_name ? h()`<span class="pill pill--${r.level >= 3 ? 'completed' : r.level === 2 ? 'in_progress' : 'medium'}">${e()(r.level_name)}</span>` : ''}
                 <span class="review__c">${e()(r.comment)}</span>
-              </div>`).join('')}
+              </div>`)}
           </div>` : ''}
       </article>`;
   }
@@ -330,7 +330,7 @@
               <strong>${e()(r.reviewer_name)}</strong>
               <span class="muted">${e()(r.created_at || '')}</span>
               <p>${e()(r.comment)}</p>
-            </div>`).join('')}
+            </div>`)}
         </div>` : ''}
     `;
 
